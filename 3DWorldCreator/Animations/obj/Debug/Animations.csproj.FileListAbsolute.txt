@@ -1,0 +1,14 @@
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.csprojAssemblyReference.cache
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.Properties.Resources.resources
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.csproj.GenerateResource.cache
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\Animations.exe.config
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\Animations.exe
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\Animations.pdb
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\MySql.Data.dll
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\Google.Protobuf.dll
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\BouncyCastle.Crypto.dll
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\Renci.SshNet.dll
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\bin\Debug\MySql.Data.xml
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.csproj.CopyComplete
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.exe
+C:\Users\alexa\source\repos\3DWorldCreator\Animations\obj\Debug\Animations.pdb

@@ -1,0 +1,17 @@
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\TableDataGateway.exe.config
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\TableDataGateway.exe
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\TableDataGateway.pdb
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\DataBase.exe
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\MySql.Data.dll
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\Google.Protobuf.dll
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\BouncyCastle.Crypto.dll
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\Renci.SshNet.dll
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\DataBase.pdb
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\DataBase.exe.config
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\bin\Debug\MySql.Data.xml
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.csprojAssemblyReference.cache
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.Properties.Resources.resources
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.csproj.GenerateResource.cache
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.csproj.CopyComplete
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.exe
+C:\Users\alexa\source\repos\3DWorldCreator\TableDataGateway\obj\Debug\TableDataGateway.pdb

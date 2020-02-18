@@ -1,0 +1,8 @@
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\bin\Debug\DataBase.exe.config
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\bin\Debug\DataBase.exe
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\bin\Debug\DataBase.pdb
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\obj\Debug\DataBase.csprojAssemblyReference.cache
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\obj\Debug\DataBase.Properties.Resources.resources
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\obj\Debug\DataBase.csproj.GenerateResource.cache
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\obj\Debug\DataBase.exe
+C:\Users\alexa\source\repos\3DWorldCreator\DataBase\obj\Debug\DataBase.pdb
