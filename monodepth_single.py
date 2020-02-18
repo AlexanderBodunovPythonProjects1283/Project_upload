@@ -27,9 +27,11 @@ import matplotlib.pyplot as plt
 from skimage.transform import resize
 from skimage import data
 
-from monodepth_model import *
-from monodepth_dataloader import *
-from average_gradients import *
+#import tensorflow as tf
+
+#from monodepth_model import *
+#from monodepth_dataloader import *
+#from average_gradients import *
 
 parser = argparse.ArgumentParser(description='Monodepth TensorFlow implementation.')
 
@@ -41,6 +43,119 @@ parser.add_argument('--input_height', type=int, help='input height', default=256
 parser.add_argument('--input_width', type=int, help='input width', default=512)
 
 args = parser.parse_args()
+
+
+def bilinear_sampler_1d_h(input_images, x_offset, wrap_mode='border', name='bilinear_sampler', **kwargs):
+    def _repeat(x, n_repeats):
+        with tf.variable_scope('_repeat'):
+            rep = tf.tile(tf.expand_dims(x, 1), [1, n_repeats])
+            return tf.reshape(rep, [-1])
+
+    def _interpolate(im, x, y):
+        with tf.variable_scope('_interpolate'):
+
+            # handle both texture border types
+            _edge_size = 0
+            if _wrap_mode == 'border':
+                _edge_size = 1
+                im = tf.pad(im, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT')
+                x = x + _edge_size
+                y = y + _edge_size
+            elif _wrap_mode == 'edge':
+                _edge_size = 0
+            else:
+                return None
+
+            x = tf.clip_by_value(x, 0.0,  _width_f - 1 + 2 * _edge_size)
+
+            x0_f = tf.floor(x)
+            y0_f = tf.floor(y)
+            x1_f = x0_f + 1
+
+            x0 = tf.cast(x0_f, tf.int32)
+            y0 = tf.cast(y0_f, tf.int32)
+            x1 = tf.cast(tf.minimum(x1_f,  _width_f - 1 + 2 * _edge_size), tf.int32)
+
+            dim2 = (_width + 2 * _edge_size)
+            dim1 = (_width + 2 * _edge_size) * (_height + 2 * _edge_size)
+            base = _repeat(tf.range(_num_batch) * dim1, _height * _width)
+            base_y0 = base + y0 * dim2
+            idx_l = base_y0 + x0
+            idx_r = base_y0 + x1
+
+            im_flat = tf.reshape(im, tf.stack([-1, _num_channels]))
+
+            pix_l = tf.gather(im_flat, idx_l)
+            pix_r = tf.gather(im_flat, idx_r)
+
+            weight_l = tf.expand_dims(x1_f - x, 1)
+            weight_r = tf.expand_dims(x - x0_f, 1)
+
+            return weight_l * pix_l + weight_r * pix_r
+
+    def _transform(input_images, x_offset):
+        with tf.variable_scope('transform'):
+            # grid of (x_t, y_t, 1), eq (1) in ref [1]
+            x_t, y_t = tf.meshgrid(tf.linspace(0.0,   _width_f - 1.0,  _width),
+                                   tf.linspace(0.0 , _height_f - 1.0 , _height))
+
+            x_t_flat = tf.reshape(x_t, (1, -1))
+            y_t_flat = tf.reshape(y_t, (1, -1))
+
+            x_t_flat = tf.tile(x_t_flat, tf.stack([_num_batch, 1]))
+            y_t_flat = tf.tile(y_t_flat, tf.stack([_num_batch, 1]))
+
+            x_t_flat = tf.reshape(x_t_flat, [-1])
+            y_t_flat = tf.reshape(y_t_flat, [-1])
+
+            x_t_flat = x_t_flat + tf.reshape(x_offset, [-1]) * _width_f
+
+            input_transformed = _interpolate(input_images, x_t_flat, y_t_flat)
+
+            output = tf.reshape(
+                input_transformed, tf.stack([_num_batch, _height, _width, _num_channels]))
+            return output
+
+    with tf.variable_scope(name):
+        _num_batch    = tf.shape(input_images)[0]
+        _height       = tf.shape(input_images)[1]
+        _width        = tf.shape(input_images)[2]
+        _num_channels = tf.shape(input_images)[3]
+
+        _height_f = tf.cast(_height, tf.float32)
+        _width_f  = tf.cast(_width,  tf.float32)
+
+        _wrap_mode = wrap_mode
+
+        output = _transform(input_images, x_offset)
+        return output
+
+
+def average_gradients(tower_grads):
+
+    average_grads = []
+    for grad_and_vars in zip(*tower_grads):
+    # Note that each grad_and_vars looks like the following:
+    #   ((grad0_gpu0, var0_gpu0), ... , (grad0_gpuN, var0_gpuN))
+        grads = []
+        for g, _ in grad_and_vars:
+            # Add 0 dimension to the gradients to represent the tower.
+            expanded_g = tf.expand_dims(g, 0)
+
+            # Append on a 'tower' dimension which we will average over below.
+            grads.append(expanded_g)
+
+        # Average over the 'tower' dimension.
+        grad = tf.concat(axis=0, values=grads)
+        grad = tf.reduce_mean(grad, 0)
+
+        # Keep in mind that the Variables are redundant because they are shared
+        # across towers. So .. we will just return the first tower's pointer to
+        # the Variable.
+        v = grad_and_vars[0][1]
+        grad_and_var = (grad, v)
+        average_grads.append(grad_and_var)
+    return average_grads
 
 
 class MonodepthModel(object):
@@ -437,7 +552,7 @@ def test_simple(params):
     model = MonodepthModel(params, "test", left, None)
 
 
-    input_image = misc.imread(args.image_path + str(i) + ".jpg", mode="RGB")
+    input_image = misc.imread(args.image_path + str(1) + ".jpg", mode="RGB")
 
     # input_image = imageio.imread(args.image_path, pilmode="RGB")
     original_height, original_width, num_channels = input_image.shape
@@ -474,9 +589,25 @@ def test_simple(params):
     # disp_to_img = resize(disp_pp.squeeze(), (original_height, original_width))
     # plt.imsave(os.path.join(output_directory, "{}_disp.png".format(output_name)), disp_to_img, cmap='plasma')
     # plt.imsave("C:/Temp/PycharmProjects/monodepth-master/output.jpg", disp_to_img, cmap='plasma')
-    plt.imsave(args.image_path + str(i) + "(1).jpg", disp_to_img, cmap='plasma')
+    plt.imsave(args.image_path + str(1) + "(1).jpg", disp_to_img, cmap='plasma')
 
     print('done!')
+
+from collections import namedtuple
+
+monodepth_parameters = namedtuple('parameters',
+                        'encoder, '
+                        'height, width, '
+                        'batch_size, '
+                        'num_threads, '
+                        'num_epochs, '
+                        'do_stereo, '
+                        'wrap_mode, '
+                        'use_deconv, '
+                        'alpha_image_loss, '
+                        'disp_gradient_loss_weight, '
+                        'lr_loss_weight, '
+                        'full_summary')
 
 
 def main(_):
