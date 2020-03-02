@@ -1,0 +1,474 @@
+#
+
+#Определение класса звука
+
+#q0-q7
+
+#r = Recognize_sound()
+#r.single_file_input()
+
+
+
+import os
+from tqdm import tqdm
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
+from python_speech_features import mfcc, logfbank
+import librosa
+import cv2
+import pyaudio
+import wave
+import os
+from keras.models import Sequential
+from keras.layers import *
+import numpy as np
+from keras.models import Model
+from keras.utils.np_utils import to_categorical
+from sklearn.utils import shuffle
+import time
+import sys
+import tensorflow as tf
+import pickle
+#from keras.utils.np_utils import to_categorical
+
+
+base_dir="C:/Temp/PycharmProjects/treehouse_system/listen_sounds/"
+#source_dir=base_dir+"single_data/single.wav"
+dest_dir=base_dir+"single_data/single_harp/"
+
+def write_signal(signal):
+    value = list(signal.values())[0]
+    values = [str(v) for v in value]
+    with open(dest_dir+"signals/0.txt", "w") as file:
+                file.write(",".join(values))
+
+def write_fft(fft):
+    data = list(fft.values())[0]
+    Y, freq = data[0], data[1]
+    Y=[str(v) for v in Y]
+    with open(dest_dir+"fft/0.txt", "w") as file:
+        file.write(",".join(Y))
+
+
+def write_fbank(fbank):
+    img_value=list(fbank.values())[0]
+    with open(dest_dir+"fbank/0.txt", "w") as file:
+                for row in img_value:
+                    row=[str(r) for r in row]
+                    file.write(" ".join(row))
+                    file.write("\n")
+
+
+def write_mfccs(mfccs):
+
+    img_value=list(mfccs.values())[0]
+    with open(dest_dir+"mfccs/0.txt", "w") as file:
+        for row in img_value:
+            row=[str(r) for r in row]
+            file.write(" ".join(row))
+            file.write("\n")
+
+
+def plot_signals(signals):
+    fig, axes = plt.subplots(nrows=4, ncols=1200, sharex=False,
+                             sharey=True, figsize=(20,5))
+    fig.suptitle("Time Series", size=16)
+    i = 0
+    print(len(list(signals.keys())))
+    for x in range(0,4):
+
+        for y in range(1200):
+            title=list(signals.keys())[i]
+            values=list(signals.values())[i]
+            axes[x,y].set_title(title)
+            axes[x,y].plot(values)
+            axes[x,y].get_xaxis().set_visible(False)
+            axes[x,y].get_yaxis().set_visible(False)
+
+            #print("Форма сигнала: ",list(signals.values())[i].shape)
+
+            values=[str(v) for v in values]
+            with open("train/signals/{}.txt".format(i), "w") as file:
+                file.write(",".join(values))
+            i += 1
+def plot_fft(fft):
+    fig, axes = plt.subplots(nrows=4, ncols=1200, sharex=False,
+                             sharey=True, figsize=(20,5))
+    fig.suptitle("Fourier Transforms", size=16)
+    i = 0
+
+    for x in range(0,4):
+        for y in range(1200):
+            data = list(fft.values())[i]
+            Y, freq = data[0], data[1]
+            print(Y,freq)
+            axes[x,y].set_title(list(fft.keys())[i])
+            axes[x,y].plot(freq, Y)
+            axes[x,y].get_xaxis().set_visible(False)
+            axes[x,y].get_yaxis().set_visible(False)
+
+            Y=[str(v) for v in Y]
+            with open("train/fft/{}.txt".format(i), "w") as file:
+                file.write(",".join(Y))
+
+            i += 1
+
+def plot_fbank(fbank):
+    min_value=np.inf
+    max_value=0
+
+
+    fig, axes = plt.subplots(nrows=4, ncols=1200, sharex=False,
+                             sharey=True, figsize=(20,5))
+    fig.suptitle("Filter Bank Coefficients", size=16)
+    i = 0
+    print(np.array((list(fbank.values())[0])).shape)
+    for x in range(0,4):
+        for y in range(1200):
+            img_value=list(fbank.values())[i]
+
+            axes[x,y].set_title(list(fbank.keys())[i])
+            axes[x,y].imshow(img_value,
+                    cmap="hot", interpolation="nearest")
+            axes[x,y].get_xaxis().set_visible(False)
+            axes[x,y].get_yaxis().set_visible(False)
+
+
+            with open("train/fbank/{}.txt".format(i), "w") as file:
+                for row in img_value:
+                    row=[str(r) for r in row]
+                    file.write(" ".join(row))
+                    file.write("\n")
+            i += 1
+    print(min_value,max_value)
+
+def plot_mfccs(mfccs):
+    fig, axes = plt.subplots(nrows=4, ncols=1200, sharex=False,
+                             sharey=True, figsize=(20,5))
+    fig.suptitle("Mel Frequency Cepstrum Coefficients", size=16)
+    i = 0
+    print(np.array((list(mfccs.values())[0])).shape)
+    for x in range(0,4):
+        for y in range(1200):
+            img_value=list(mfccs.values())[i]
+            axes[x,y].set_title(list(mfccs.keys())[i])
+            axes[x,y].imshow(img_value,
+                    cmap="hot", interpolation="nearest")
+            axes[x,y].get_xaxis().set_visible(False)
+            axes[x,y].get_yaxis().set_visible(False)
+            #cv2.imwrite("train/mfccs/{}.png".format(i), img_value)
+            with open("train/mfccs/{}.txt".format(i), "w") as file:
+                for row in img_value:
+                    row=[str(r) for r in row]
+                    file.write(" ".join(row))
+                    file.write("\n")
+            i += 1
+
+def calc_fft(y,rate):
+    n=len(y)
+    freq=np.fft.rfftfreq(n,d=1/rate)
+    Y=abs(np.fft.rfft(y)/n)
+    return(Y,freq)
+
+
+def envelope(y,rate,threshold):
+    mask=[]
+    y=pd.Series(y).apply(np.abs)
+    y_mean=y.rolling(window=int(rate/10),min_periods=1,center=True).mean()
+    for mean in y_mean:
+        if mean>threshold:
+            mask.append(True)
+        else:
+            mask.append(False)
+
+    return mask
+
+
+#single_file_input()
+
+class Recognize_sound():
+    def __init__(self):
+
+        input_shape1 = (26, 99, 1)
+        input_shape2 = (13, 99, 1)
+        input_shape3 = (1, 66049)
+        input_shape4 = (1, 132096)
+
+        model1 = Sequential()
+        model1.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=input_shape1))
+        model1.add(MaxPooling2D(pool_size=(2, 2)))
+        model1.add(BatchNormalization())
+        model1.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
+        model1.add(MaxPooling2D(pool_size=(2, 2)))
+        model1.add(BatchNormalization())
+        model1.add(Dropout(0.2))
+        model1.add(Flatten())
+        model1.add(Dense(128, activation="relu"))
+        model1.add(Dense(8, activation="softmax"))
+
+        model2 = Sequential()
+        model2.add(Conv2D(32, kernel_size=(3, 3), activation="relu", input_shape=input_shape2))
+        model2.add(MaxPooling2D(pool_size=(2, 2)))
+        model2.add(BatchNormalization())
+        model2.add(Conv2D(64, kernel_size=(3, 3), activation="relu"))
+        model2.add(MaxPooling2D(pool_size=(2, 2)))
+        model2.add(BatchNormalization())
+        model2.add(Dropout(0.2))
+        model2.add(Flatten())
+        model2.add(Dense(128, activation="relu"))
+        model2.add(Dense(8, activation="softmax"))
+
+        model3 = Sequential()
+        model3.add(LSTM(128, return_sequences=True, input_shape=input_shape3))
+        model3.add(LSTM(128, return_sequences=True))
+        model3.add(Dropout(0.5))
+        model3.add(TimeDistributed(Dense(64, activation="relu")))
+        model3.add(TimeDistributed(Dense(32, activation="relu")))
+        model3.add(TimeDistributed(Dense(16, activation="relu")))
+        model3.add(TimeDistributed(Dense(8, activation="relu")))
+        model3.add(Flatten())
+        model3.add(Dense(8, activation="softmax"))
+
+        model4 = Sequential()
+        model4.add(LSTM(128, return_sequences=True, input_shape=input_shape4))
+        model4.add(LSTM(128, return_sequences=True))
+        model4.add(Dropout(0.5))
+        model4.add(TimeDistributed(Dense(64, activation="relu")))
+        model4.add(TimeDistributed(Dense(32, activation="relu")))
+        model4.add(TimeDistributed(Dense(16, activation="relu")))
+        model4.add(TimeDistributed(Dense(8, activation="relu")))
+        model4.add(Flatten())
+        model4.add(Dense(8, activation="softmax"))
+
+        mergedOut = Add()([model1.output, model2.output, model3.output, model4.output])
+        output = Dense(8, activation="softmax")(mergedOut)
+
+        newModel = Model([model1.input, model2.input, model3.input, model4.input], output)
+
+        newModel.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
+
+        newModel.summary()
+
+        path = "C:/Users/nick/Desktop/my/PycharmProjects/treehouse_system/listen_sounds/"
+        weights = path + "harpweights.h5"
+        try:
+            newModel.load_weights(weights)
+            print("Веса загружены")
+        except:
+            pass
+
+        self.newModel=newModel
+        self.graph = tf.get_default_graph()
+
+    def harp_classifier(self):
+
+        def load_Y(start):
+            Y_train = np.array(Y[start:start + 200])
+            return Y_train
+
+        def extract_image_test(SOURCE_dir):
+            X_train = []
+            with open(SOURCE_dir, "r") as file:
+                data = file.read()
+            train_elem = []
+            rows = data.split("\n")[:-1]
+            for r in rows:
+                row = [[float(el)] for el in r.split(" ")]
+                train_elem.append(row)
+            X_train.append(train_elem)
+            X_train = np.array(X_train)
+
+            return X_train
+
+        def load_seq(SOURCE_dir):
+            X_train = []
+
+            with open(SOURCE_dir, "r") as file:
+                data = file.read()
+            data = data.split(",")
+            X_train.append([data])
+            X_train = np.array(X_train)
+            return X_train
+
+        base_dir = "C:/Temp/PycharmProjects/treehouse_system/listen_sounds/"
+        source_dir = base_dir + "single_data/single.wav"
+        dest_dir = base_dir + "single_data/single_harp/"
+        num_samples = 10
+        num_rows = num_samples  # int(num_samples/6)
+        num_samples_per_file = 5  # 6
+
+        CHUNK = 1024
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 2
+        RATE = 44100
+        RECORD_SECONDS = 3
+        # WAVE_OUTPUT_FILENAME = "output.wav"
+        # DEST_DIR="single_data/"
+
+
+
+
+
+        folder_curr = 7
+        count_ = 0
+        files_counter = 800
+        while True:
+            count_ += 50
+            candidate = count_ // 2500
+            counter = 2500 - (count_ % 2500)
+            print("Осталось {}".format(counter))
+            if counter == 2500:
+                frames = []
+                count_ = 0
+                files_counter += 1
+
+                p = pyaudio.PyAudio()
+                print("done 1")
+                stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+                print("done 2")
+                maxval = int(RATE / CHUNK * RECORD_SECONDS)
+
+                # bar = progressbar.ProgressBar(maxval=maxval,widgets=[progressbar.Bar(left="[", marker="+", right="]")]).start()
+
+                old_d = 0
+                print("* recording")
+                for i in range(0, maxval):
+                    data = stream.read(CHUNK)
+                    # bar.update(i)
+                    frames.append(data)
+                    d = int((i / maxval) * 30)
+                    if d > old_d:
+                        text = "\r|{0}{1}|".format("#" * d, "-" * (30 - d))
+                        print(text)
+
+                print("* done recording")
+                # bar.finish()
+
+                stream.stop_stream()
+                stream.close()
+                p.terminate()
+
+                wf = wave.open(source_dir, "wb")
+                wf.setnchannels(CHANNELS)
+                wf.setsampwidth(p.get_sample_size(FORMAT))
+                wf.setframerate(RATE)
+                wf.writeframes(b"".join(frames))
+                wf.close()
+
+                lables = []
+                file_names = []
+
+                signals = {}
+                fft = {}
+                fbank = {}
+                mfccs = {}
+
+                index_ = 0
+
+                # signal,rate=librosa.load(source_dir+wav_file,sr=44100, mono=True,offset=2+samp*7,duration=6)
+                signal, rate = librosa.load(source_dir, sr=44100, mono=True)
+
+                signals[index_] = signal
+                # print("Длина сигнала {}".format(len(signal)))
+
+                fft[index_] = calc_fft(signal, rate)
+
+                bank = logfbank(signal[:rate], rate, nfilt=26, nfft=1103).T
+                fbank[index_] = bank
+
+                nel = mfcc(signal[:rate], rate, numcep=13, nfilt=26, nfft=1103).T
+                mfccs[index_] = nel
+
+                write_signal(signals)
+
+                write_fft(fft)
+                write_fbank(fbank)
+                write_mfccs(mfccs)
+
+                base_dir = "C:/Temp/PycharmProjects/treehouse_system/listen_sounds/"
+                SOURCE_dir = base_dir + "single_data/single_harp/"
+                SOURCE_dir1 = SOURCE_dir + "fbank/0.txt"
+                SOURCE_dir2 = SOURCE_dir + "mfccs/0.txt"
+                SOURCE_dir3 = SOURCE_dir + "fft/0.txt"
+                SOURCE_dir4 = SOURCE_dir + "signals/0.txt"
+
+                t1 = time.time()
+                X_test_1 = extract_image_test(SOURCE_dir1)
+                print(time.time() - t1, " секунд")
+                X_test_2 = extract_image_test(SOURCE_dir2)
+                print(time.time() - t1, " секунд")
+                X_test_3 = load_seq(SOURCE_dir3)
+                print(time.time() - t1, " секунд")
+                X_test_4 = load_seq(SOURCE_dir4)
+                print(time.time() - t1, " секунд")
+                #print(X_test_1.shape, X_test_2.shape, X_test_3.shape, X_test_4.shape)
+                self.newModel._make_predict_function()
+
+                #Y = [to_categorical(ik) for ik in range(8)]
+                #for kl in Y:
+                    #score = self.newModel.evaluate([X_test_1, X_test_2, X_test_3, X_test_4], kl)
+                    #print (kl,score)
+
+                with self.graph.as_default():
+                    result = self.newModel.predict([X_test_1, X_test_2, X_test_3, X_test_4])
+                print("Класс музыки: ",max(result), np.argmax(result))
+                class_result = str(np.argmax(result))
+                dir="C:/Temp/PycharmProjects/treehouse_system/listen_sounds/"
+                with open(dir+"result_sounds.txt", "w")as file:
+                    file.write("s" + class_result)
+
+                break
+                
+    def train():
+        SOURCE_dir="C:/Temp/train_harp_2/"
+        SOURCE_dir1=SOURCE_dir+"fbank/"
+        SOURCE_dir2=SOURCE_dir+"mfccs/"
+        SOURCE_dir3=SOURCE_dir+"fft/"
+        SOURCE_dir4=SOURCE_dir+"signals/"
+
+        #dest_dir="C:/Temp/train_harp_pickle/"
+
+        for train_step in range(100):
+            with open("statistics_1.txt", "a+")as file:
+                file.write("шаг {}\n".format(train_step))
+            for batch in range(48):
+                t1=time.time()
+
+                print("Обрабатывается выборка {} из 240 ".format(batch))
+
+                X_train_1=extract_image_train(SOURCE_dir1,batch*50)
+                print(time.time()-t1," секунд")
+                X_train_2=extract_image_train(SOURCE_dir2,batch*50)
+                print(time.time()-t1," секунд")
+                X_train_3=load_seq(SOURCE_dir3,batch*50)
+                print(time.time()-t1," секунд")
+                X_train_4=load_seq(SOURCE_dir4,batch*50)
+                print(time.time()-t1," секунд")
+                Y_train=load_Y(batch*50)
+
+                X_train_1,X_train_2,X_train_3,X_train_4,Y_train=shuffle(X_train_1,X_train_2,X_train_3,X_train_4,Y_train)
+
+                #print(X_train_1.shape, X_train_2.shape, X_train_3.shape, X_train_4.shape, Y_train.shape)
+                if batch%2==1:
+                    newModel.fit([X_train_1, X_train_2,X_train_3,X_train_4], Y_train,batch_size=10,epochs=1)
+                else:
+                    score=newModel.evaluate([X_train_1, X_train_2,X_train_3,X_train_4], Y_train, batch_size=10)
+                    with open("statistics_1.txt","a+")as file:
+                        file.write("{}\n".format(score))
+
+                    #newModel.save_weights("harpweights.h5")
+                    print("Точность обучения на тестовой выборке: {}".format(score))
+
+
+r = Recognize_sound()
+
+while True:
+    r.harp_classifier()
+
+
+#with open("single_file_input.pkl", "wb") as output:
+#r = Recognize_sound()
+#pickle.dump(r, output, pickle.HIGHEST_PROTOCOL)
+#r.single_file_input()

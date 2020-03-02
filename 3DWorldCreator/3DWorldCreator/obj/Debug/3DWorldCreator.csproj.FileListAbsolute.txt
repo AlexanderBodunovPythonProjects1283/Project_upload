@@ -34,3 +34,6 @@ C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\bin\Debug\Interop.Shoc
 C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\bin\Debug\AxInterop.ShockwaveFlashObjects.dll
 C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\obj\Debug\Interop.ShockwaveFlashObjects.dll
 C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\obj\Debug\AxInterop.ShockwaveFlashObjects.dll
+C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\bin\Debug\System.Management.Automation.dll
+C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\bin\Debug\LocalDB.mdf
+C:\Users\alexa\source\repos\3DWorldCreator\3DWorldCreator\bin\Debug\LocalDB_log.ldf

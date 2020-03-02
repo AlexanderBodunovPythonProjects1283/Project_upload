@@ -24,10 +24,74 @@ using System.IO;
 
 namespace TableDataGateway
 {
+
+    public class MyLocalDB
+    {
+        public  MySqlConnection connection1;
+
+        public MyLocalDB()
+        {
+            //public MySqlConnection connection;
+            string host = "localhost";
+            int port = 3306;
+            string database = "local_db";
+            string username = "root";
+            string password = "EfbgUvrq";
+
+            String connString = "Server=" + host  //+";Database=" + database
+                + ";port=" + port + ";User Id=" + username + ";password=" + password;
+
+            connection1 = new MySqlConnection(connString);//"datasourse=localhost;port=3306;username=root;password=EfbgUvrq");
+            connection1.Open();
+            //return connection;
+            MySqlCommand cmd;
+
+            string s0 = "CREATE DATABASE IF NOT EXISTS `local_db`;";
+            cmd = new MySqlCommand(s0, connection1);
+            cmd.ExecuteNonQuery();
+            connection1.Close();
+
+            String connString1 = "Server=" + host +";Database=" + database
+                + ";port=" + port + ";User Id=" + username + ";password=" + password;
+
+            connection1 = new MySqlConnection(connString1);//"datasourse=localhost;port=3306;username=root;password=EfbgUvrq");
+            connection1.Open();
+            //return connection;
+
+            // "package", "virtualenv_has_package", "virtualenv", "python_interpreter"
+            string[] tables = { "User", "user_multicript", "user_input_script", "user_graph", "user_output_script", "user_graph_has_user_input_script", "user_graph_has_user_output_script", "performance", "single_perf_phrase", "animation" };
+
+
+            foreach (string table in tables)
+            {
+                s0 = @"CREATE TABLE IF NOT EXISTS local_db."+ table + @" LIKE mydb."+ table + ";";
+                cmd = new MySqlCommand(s0, connection1);
+                cmd.ExecuteNonQuery();
+
+                s0 = @"DELETE FROM local_db." + table + ";";
+                cmd = new MySqlCommand(s0, connection1);
+                cmd.ExecuteNonQuery();
+
+                s0 = @"INSERT INTO local_db."+ table + " SELECT * FROM mydb."+ table + ";";
+                cmd = new MySqlCommand(s0, connection1);
+                cmd.ExecuteNonQuery();
+            }
+            connection1.Close();
+
+        }
+
+
+
+    }
+
+
     public class My_MySQLDB
     {
 
         public MySqlConnection connection;
+
+
+        
 
 
         public My_MySQLDB()
@@ -197,6 +261,33 @@ namespace TableDataGateway
 
         }
 
+        public List<virtualenv> get_virtualenvs()
+        {
+            List<virtualenv> virtualenvs = new List<virtualenv>();
+
+            string sql = "SELECT * FROM virtualenv";
+            MySqlCommand command = new MySqlCommand(sql, connection);
+           
+            MySqlDataReader reader = command.ExecuteReader();
+
+            while (reader.Read())
+            {
+                string name = reader["name"].ToString();
+                string python_interpreter_idPython_interpreter = reader["python_interpreter_idPython_interpreter"].ToString();
+                string verbal=reader["verbal"].ToString();
+
+                int python_interpreter_idPython_interpreter_ = Int32.Parse(python_interpreter_idPython_interpreter);
+
+
+                //string script_name = get_input_script_name_by_id(User_input_script_idUser_script);
+                virtualenv env = new virtualenv(name, python_interpreter_idPython_interpreter_, verbal);
+                virtualenvs.Add(env); 
+            }
+            reader.Close();
+            return virtualenvs;
+
+        }
+
         public string get_input_script_name_by_id(int id__, string type_)
         {
             //idUser_script = 27;
@@ -233,7 +324,17 @@ namespace TableDataGateway
             //return 0;
         }
 
-        
+        public void insert_virt_env(string python_interpreter_idPython_interpreter,string name, string verbal)
+        {
+            string sql_request = "INSERT INTO virtualenv (name, python_interpreter_idPython_interpreter,verbal) VALUES('" + name + "', '" + 1 + "','" + verbal + "');";
+
+            MySqlCommand command = new MySqlCommand(sql_request, connection);
+
+            command.ExecuteNonQuery();
+        }
+
+
+
 
         public int insert_user_graph_script(string User_idUser, string graph_name, string graph_file)
         {
